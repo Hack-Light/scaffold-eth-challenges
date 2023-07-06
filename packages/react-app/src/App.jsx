@@ -50,7 +50,7 @@ const { ethers } = require("ethers");
 */
 
 /// 📡 What chain are your contracts deployed to?
-const targetNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const targetNetwork = NETWORKS.sepolia; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -251,6 +251,8 @@ function App(props) {
     readContracts && readContracts.Staker ? readContracts.Staker.address : null,
   );
   if (DEBUG) console.log("💵 stakerContractBalance", stakerContractBalance);
+  if (DEBUG) console.log("💵 stakerContractBalance", localProvider);
+  if (DEBUG) console.log("💵 stakerContractBalance", readContracts);
 
   // ** keep track of total 'threshold' needed of ETH
   const threshold = useContractReader(readContracts, "Staker", "threshold");
