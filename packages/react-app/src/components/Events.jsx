@@ -41,16 +41,12 @@ export default function Events({ contracts, contractName, eventName, localProvid
         dataSource={events}
         renderItem={item => {
           if (!item || !item.args || item.args.length === 0) {
-            return (
-              <List.Item key={item.blockNumber + "_"}>
-                Event without arguments
-              </List.Item>
-            );
+            return <List.Item key={item.blockNumber + "_"}>Event without arguments</List.Item>;
           }
           return (
             <List.Item key={item.blockNumber + "_" + item.args[0].toString()}>
               <Address address={item.args[0]} ensProvider={mainnetProvider} fontSize={16} />
-              {item.args[1].toString().indexOf("E") == -1 ? (
+              {item.args[1].toString().indexOf("E") === -1 ? (
                 <TokenBalance balance={item.args[1]} provider={localProvider} />
               ) : (
                 `${item.args[1].toString()}`
