@@ -14,15 +14,23 @@ module.exports = async ({ getNamedAccounts, deployments, getChainId }) => {
 
   const streamer = await ethers.getContract("Streamer", deployer);
 
-  //console.log("\n 🤹  Sending ownership to frontend address...\n");
-  //Checkpoint 2: change address to your frontend address vvvv
-  //const ownerTx = await streamer.transferOwnership("** YOUR FRONTEND ADDRESS **");
+  const owner = await streamer.owner();
 
-  // console.log("\n       confirming...\n");
-  // const ownershipResult = await ownerTx.wait();
-  // if (ownershipResult) {
-  //   console.log("       ✅ ownership transferred successfully!\n");
-  // }
+  console.log("\n Owner: ", owner);
+
+  console.log("\n 🤹  Sending ownership to frontend address...\n");
+
+  // Checkpoint 2: change address to your frontend address vvvv
+
+  const ownerTx = await streamer.transferOwnership(
+    "0x2c93fedcc560305cfebec418eb4dee2c48290594"
+  );
+
+  console.log("\n       confirming...\n");
+  const ownershipResult = await ownerTx.wait();
+  if (ownershipResult) {
+    console.log("       ✅ ownership transferred successfully!\n");
+  }
 };
 
 module.exports.tags = ["Streamer"];

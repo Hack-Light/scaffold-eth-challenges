@@ -52,7 +52,7 @@ const { ethers } = require("ethers");
 */
 
 /// 📡 What chain are your contracts deployed to?
-const targetNetwork = NETWORKS.localhost; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
+const targetNetwork = NETWORKS.sepolia; // <------- select your target frontend network (localhost, rinkeby, xdai, mainnet)
 
 // 😬 Sorry for all the console logging
 const DEBUG = true;
@@ -293,7 +293,9 @@ function App(props) {
     // turn off the noisy interval mining if there are
     // no expected challenge channels after this tx
     try {
-      localProvider.send("evm_setIntervalMining", [0]);
+      if (selectedChainId == 31337) {
+        localProvider.send("evm_setIntervalMining", [0]);
+      }
     } catch (e) {}
   }
 
@@ -329,8 +331,6 @@ function App(props) {
     return window.userChannel;
   }
 
-
-  
   //This is the wisdome the client is paying for. It'd better be good.
   let recievedWisdom = "";
 
@@ -474,7 +474,18 @@ function App(props) {
        *  recreate the packed, hashed, and arrayified message from reimburseService (above),
        *  and then use ethers.utils.verifyMessage() to confirm that voucher signer was
        *  `clientAddress`. (If it wasn't, log some error message and return).
-      */
+       */
+
+      const packed = ethers.utils.solidityPack(["uint256"], [updatedBalance]);
+      const hashed = ethers.utils.keccak256(packed);
+      const arrayified = ethers.utils.arrayify(hashed);
+
+      let isSigner = clientAddress == ethers.utils.verifyMessage(arrayified, voucher.data.signature);
+
+      if (!isSigner) {
+        console.log("Not signer");
+        return;
+      }
 
       const existingVoucher = vouchers()[clientAddress];
 
@@ -529,11 +540,29 @@ function App(props) {
    */
   function provideService(clientAddress) {
     const channelInput = document.getElementById("input-" + clientAddress);
+    let enableProvide = true;
     if (channelInput) {
-      const wisdom = channelInput.value;
+      let clientBestVouchers = vouchers()[clientAddress];
+      console.log("clientBestVouchers is ", clientBestVouchers);
+      // if (clientBestVouchers && clientBestVouchers.updatedBalance > 0) {
+      //   console.log("clientBestVouchers.updatedBalance is :", clientBestVouchers.updatedBalance.toString());}
+      if (clientBestVouchers && clientBestVouchers.updatedBalance <= 0) {
+        console.log("the Rube's balance is over!!");
+        enableProvide = false;
+        document.getElementById("input-" + clientAddress).setAttribute("disabled", "true");
+        return;
+      }
+      if (enableProvide) {
+        const wisdom = channelInput.value;
+        console.log("sending: %s", wisdom);
+        channels[clientAddress].postMessage(wisdom);
+        console.log("provide Service: channels[clientAddress] = ", channels[clientAddress]);
+        document.getElementById(`provided-${clientAddress}`).innerText = wisdom.length;
+      }
+      // const wisdom = channelInput.value;
       // console.log("sending: %s", wisdom);
-      channels[clientAddress].postMessage(wisdom);
-      document.getElementById(`provided-${clientAddress}`).innerText = wisdom.length;
+      // channels[clientAddress].postMessage(wisdom);
+      // document.getElementById(`provided-${clientAddress}`).innerText = wisdom.length;
     } else {
       console.warn(`Failed to get ChannelInput. Found: ${channelInput}`);
     }
@@ -550,7 +579,7 @@ function App(props) {
    */
   async function claimPaymentOnChain(clientAddress) {
     console.log("Claiming voucher on chain...");
-    // logVouchers();
+    logVouchers();
 
     if (vouchers()[clientAddress] == undefined) {
       console.warn(`no voucher found for ${clientAddress}`);
@@ -800,7 +829,7 @@ function App(props) {
                         </div>
                       </Card>
 
-                      {/* Checkpoint 5:
+                      {/* Checkpoint 5: */}
                       <Button
                         style={{ margin: 5 }}
                         type="primary"
@@ -811,7 +840,7 @@ function App(props) {
                         }}
                       >
                         Cash out latest voucher
-                      </Button> */}
+                      </Button>
                     </List.Item>
                   )}
                 ></List>
@@ -853,7 +882,7 @@ function App(props) {
                         </Card>
                       </Col>
 
-                      {/* Checkpoint 6: challenge & closure
+                      {/* Checkpoint 6: challenge & closure */}
 
                       <Col span={5}>
                         <Button
@@ -863,11 +892,13 @@ function App(props) {
                             // disable the production of further voucher signatures
                             autoPay = false;
                             tx(writeContracts.Streamer.challengeChannel());
-                            try {
-                              // ensure a 'ticking clock' for the UI without having
-                              // to send new transactions & mine new blocks
-                              localProvider.send("evm_setIntervalMining", [5000]);
-                            } catch (e) {}
+                            if (selectedChainId == 31337) {
+                              try {
+                                // ensure a 'ticking clock' for the UI without having
+                                // to send new transactions & mine new blocks
+                                localProvider.send("evm_setIntervalMining", [5000]);
+                              } catch (e) {}
+                            }
                           }}
                         >
                           Challenge this channel!
@@ -887,7 +918,7 @@ function App(props) {
                         >
                           Close and withdraw funds
                         </Button>
-                      </Col> */}
+                      </Col>
                     </Row>
                   </div>
                 ) : hasClosedChannel() ? (
